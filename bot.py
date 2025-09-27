@@ -1,7 +1,7 @@
 from ncatbot.core import BotClient
 from ncatbot.core.event import GroupMessageEvent, PrivateMessageEvent
 from ncatbot.core.api import BotAPI
-from forwardbot.rules import ForwardRuleManager
+from rules import ForwardRuleManager
 
 
 # 基础配置（示例）
