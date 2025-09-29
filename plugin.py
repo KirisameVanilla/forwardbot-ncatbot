@@ -250,24 +250,16 @@ class ForwardBotPlugin(NcatBotPlugin):
         """
         for attempt in range(max_retries + 1):
             try:
-                result = self.api.forward_group_single_msg_sync(
-                    target_group, message_id
-                )
+                self.api.forward_group_single_msg_sync(target_group, message_id)
 
-                if result:
-                    self.forward_stats["success"] += 1
-                    if attempt > 0:
-                        logger.info(
-                            f"✅ 消息转发成功 (重试第{attempt}次): 群{target_group}"
-                        )
-                    else:
-                        logger.info(f"✅ 消息转发成功: 群{target_group}")
-                    return True
-                else:
-                    logger.warning(
-                        f"⚠️ API返回空结果: 群{target_group} (尝试 {attempt + 1}/{max_retries + 1})"
+                self.forward_stats["success"] += 1
+                if attempt > 0:
+                    logger.info(
+                        f"✅ 消息转发成功 (重试第{attempt}次): 群{target_group}"
                     )
-
+                else:
+                    logger.info(f"✅ 消息转发成功: 群{target_group}")
+                return True
             except AttributeError as e:
                 logger.error(f"❌ AttributeError: 群{target_group}, 规则{rule_name}")
                 logger.error(f"   错误: {e}")
