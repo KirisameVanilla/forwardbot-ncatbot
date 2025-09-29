@@ -114,6 +114,7 @@ class ForwardRuleManager:
 
                 # 加载转发规则
                 rules_data = config.get("forward", {}).get("rules", [])
+                self.admins = config.get("admin", [])
                 self.rules = []
 
                 for rule_data in rules_data:
@@ -265,3 +266,7 @@ class ForwardRuleManager:
             ]
         else:
             return [rule.to_dict() for rule in self.rules]
+
+    def isAdmin(self, user_id: int | str) -> bool:
+        """检查用户是否为管理员"""
+        return int(user_id) in self.admins

@@ -23,22 +23,6 @@ forward:
       preserve_format: true       # 是否保持原始格式
       forward_prefix: "[转发]"    # 转发前缀模板，支持变量 {source_group}
 
-# 统计配置
-statistics:
-  enabled: true                   # 是否启用统计功能
-  log_forward_events: true        # 记录转发事件到日志
-
 # 管理员配置  
 admin:
-  # 有权使用管理命令的QQ号列表
-  # 如果为空，则只有config.yaml中的root用户可以使用
-  authorized_users: []
-    # - 111111111
-    # - 222222222
-
-# 日志配置
-logging:
-  level: "INFO"                   # 日志级别: DEBUG, INFO, WARNING, ERROR
-  log_file: "forward_bot.log"     # 日志文件名
-  max_log_size: "10MB"           # 日志文件最大大小
-  backup_count: 5                # 保留的日志文件数量
+  - 123456789                   # 管理员QQ号列表

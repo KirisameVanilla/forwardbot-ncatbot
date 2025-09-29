@@ -2,8 +2,6 @@ from ncatbot.plugin_system import (
     NcatBotPlugin,
     group_filter,
     command_registry,
-    option,
-    param,
 )
 from ncatbot.utils import config, get_log
 from ncatbot.core.event import GroupMessageEvent
@@ -330,6 +328,10 @@ class ForwardBotPlugin(NcatBotPlugin):
 
     @command_registry.command("forward")
     async def onGroupCommandReceived(self, event: GroupMessageEvent, *args: str):
+        if event.user_id is not config.root and not self.manager.isAdmin(event.user_id):
+            await event.reply("❌ 你没有权限使用此命令")
+            return
+
         if not args:
             await event.reply("请提供子命令")
             return
