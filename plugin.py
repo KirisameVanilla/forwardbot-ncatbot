@@ -7,7 +7,9 @@ from ncatbot.plugin_system import (
 )
 from ncatbot.utils import config, get_log
 from ncatbot.core.event import GroupMessageEvent
+from ncatbot.plugin_system import root_filter
 from .rules import ForwardRuleManager
+from .forward_admin_filter import ForwardAdminFilter
 import time
 
 logger = get_log("ForwardBot")
@@ -26,9 +28,27 @@ class ForwardBotPlugin(NcatBotPlugin):
     forward_rules_command_group = forward_command_group.group(
         "rules", description="转发规则管理命令"
     )
+    forward_admins_command_group = forward_command_group.group(
+        "admins", description="转发管理员管理命令"
+    )
 
-    # 转发统计
     forward_stats = {"success": 0, "failed": 0, "start_time": time.time()}
+
+    async def on_load(self) -> None:
+        self.rbac_manager.add_role("forward_admin")
+        # 为配置的每个 admin 赋予权限
+        for admin in self.manager.admins:
+            self.rbac_manager.assign_role_to_user(str(admin), "forward_admin")
+
+    @root_filter
+    @forward_admins_command_group.command("add")
+    @param(name="user_id", default="", help="要添加的管理员QQ号")
+    async def admin_add_cmd(self, event: GroupMessageEvent, user_id: str = ""):
+        """添加转发管理员"""
+        if not user_id:
+            await event.reply("❌ 请指定要添加的管理员QQ号")
+            return
+        self.rbac_manager.assign_role_to_user(user_id, "forward_admin")
 
     @forward_command_group.command("stats")
     @option(short_name="v", long_name="verbose", help="启用详细模式")
@@ -82,6 +102,7 @@ class ForwardBotPlugin(NcatBotPlugin):
             logger.error(f"❌ 处理统计命令时出错: {e}")
             await event.reply("❌ 获取统计信息失败")
 
+    @ForwardAdminFilter()
     @forward_rules_command_group.command("list")
     @option(short_name="d", long_name="detailed", help="启用详细格式")
     async def rules_list_cmd(self, event: GroupMessageEvent, detailed: bool = False):
@@ -179,6 +200,7 @@ class ForwardBotPlugin(NcatBotPlugin):
             logger.error(f"❌ 处理删除规则命令时出错: {e}")
             await event.reply("❌ 删除规则失败")
 
+    @ForwardAdminFilter()
     @forward_rules_command_group.command("enable")
     @param(name="rule_name", default="", help="要启用的规则名称")
     async def rule_enable_cmd(self, event: GroupMessageEvent, rule_name: str = ""):
@@ -209,6 +231,7 @@ class ForwardBotPlugin(NcatBotPlugin):
             logger.error(f"❌ 处理启用规则命令时出错: {e}")
             await event.reply("❌ 启用规则失败")
 
+    @ForwardAdminFilter()
     @forward_rules_command_group.command("disable")
     @param(name="rule_name", default="", help="要禁用的规则名称")
     async def rule_disable_cmd(self, event: GroupMessageEvent, rule_name: str):

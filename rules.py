@@ -114,7 +114,7 @@ class ForwardRuleManager:
 
                 # 加载转发规则
                 rules_data = config.get("forward", {}).get("rules", [])
-                self.admins = config.get("admin", [])
+                self.admins: list[int] = config.get("admin", [])
                 self.rules = []
 
                 for rule_data in rules_data:
