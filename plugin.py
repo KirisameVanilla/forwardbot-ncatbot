@@ -1,13 +1,13 @@
 from ncatbot.plugin_system import (
     NcatBotPlugin,
     group_filter,
+    root_filter,
     command_registry,
     option,
     param,
 )
 from ncatbot.utils import config, get_log
 from ncatbot.core.event import GroupMessageEvent
-from ncatbot.plugin_system import root_filter
 from .rules import ForwardRuleManager
 from .forward_admin_filter import ForwardAdminFilter
 import time
@@ -39,6 +39,7 @@ class ForwardBotPlugin(NcatBotPlugin):
         # 为配置的每个 admin 赋予权限
         for admin in self.manager.admins:
             self.rbac_manager.assign_role_to_user(str(admin), "forward_admin")
+            logger.info(f"✅ 已赋予转发管理员权限: {admin}")
 
     @root_filter
     @forward_admins_command_group.command("add")
@@ -49,6 +50,10 @@ class ForwardBotPlugin(NcatBotPlugin):
             await event.reply("❌ 请指定要添加的管理员QQ号")
             return
         self.rbac_manager.assign_role_to_user(user_id, "forward_admin")
+        await event.reply(f"✅ 成功添加转发管理员: {user_id}")
+        logger.info(
+            f"✅ 已添加转发管理员: {user_id} (操作人: 群 {event.sender.user_id})"
+        )
 
     @forward_command_group.command("stats")
     @option(short_name="v", long_name="verbose", help="启用详细模式")
@@ -155,8 +160,10 @@ class ForwardBotPlugin(NcatBotPlugin):
         """添加转发规则"""
         await event.reply("🚧 规则添加功能正在开发中...")
 
+    @ForwardAdminFilter()
     @forward_rules_command_group.command("delete")
     @param(name="rule_name", default="", help="要删除的规则名称")
+    @option(short_name="f", long_name="force", help="启用强制删除模式")
     async def rule_delete_cmd(
         self, event: GroupMessageEvent, rule_name: str, force: bool = False
     ):
