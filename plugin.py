@@ -2,6 +2,8 @@ from ncatbot.plugin_system import (
     NcatBotPlugin,
     group_filter,
     command_registry,
+    option,
+    param,
 )
 from ncatbot.utils import config, get_log
 from ncatbot.core.event import GroupMessageEvent
@@ -18,9 +20,18 @@ class ForwardBotPlugin(NcatBotPlugin):
 
     manager = ForwardRuleManager()
 
+    forward_command_group = command_registry.group(
+        "forward", description="消息转发模块命令"
+    )
+    forward_rules_command_group = forward_command_group.group(
+        "rules", description="转发规则管理命令"
+    )
+
     # 转发统计
     forward_stats = {"success": 0, "failed": 0, "start_time": time.time()}
 
+    @forward_command_group.command("stats")
+    @option(short_name="v", long_name="verbose", help="启用详细模式")
     async def stats_cmd(self, event: GroupMessageEvent, verbose: bool = False):
         """查看转发统计信息"""
         try:
@@ -71,7 +82,9 @@ class ForwardBotPlugin(NcatBotPlugin):
             logger.error(f"❌ 处理统计命令时出错: {e}")
             await event.reply("❌ 获取统计信息失败")
 
-    async def rules_cmd(self, event: GroupMessageEvent, format: str = "simple"):
+    @forward_rules_command_group.command("list")
+    @option(short_name="d", long_name="detailed", help="启用详细格式")
+    async def rules_list_cmd(self, event: GroupMessageEvent, detailed: bool = False):
         """查看转发规则列表"""
         try:
             if not self.manager.rules:
@@ -84,7 +97,7 @@ class ForwardBotPlugin(NcatBotPlugin):
                 status = "🟢 启用" if rule.enabled else "🔴 禁用"
                 rule_type = "前缀匹配" if rule.type == "prefix" else "关键词匹配"
 
-                if format == "detailed":
+                if detailed:
                     # 详细格式
                     rules_text += f"{i}. {rule.name}\n"
                     rules_text += f"   状态：{status}\n"
@@ -121,6 +134,8 @@ class ForwardBotPlugin(NcatBotPlugin):
         """添加转发规则"""
         await event.reply("🚧 规则添加功能正在开发中...")
 
+    @forward_rules_command_group.command("delete")
+    @param(name="rule_name", default="", help="要删除的规则名称")
     async def rule_delete_cmd(
         self, event: GroupMessageEvent, rule_name: str, force: bool = False
     ):
@@ -164,7 +179,9 @@ class ForwardBotPlugin(NcatBotPlugin):
             logger.error(f"❌ 处理删除规则命令时出错: {e}")
             await event.reply("❌ 删除规则失败")
 
-    async def rule_enable_cmd(self, event: GroupMessageEvent, rule_name: str):
+    @forward_rules_command_group.command("enable")
+    @param(name="rule_name", default="", help="要启用的规则名称")
+    async def rule_enable_cmd(self, event: GroupMessageEvent, rule_name: str = ""):
         """启用转发规则"""
         try:
             if not rule_name:
@@ -192,6 +209,8 @@ class ForwardBotPlugin(NcatBotPlugin):
             logger.error(f"❌ 处理启用规则命令时出错: {e}")
             await event.reply("❌ 启用规则失败")
 
+    @forward_rules_command_group.command("disable")
+    @param(name="rule_name", default="", help="要禁用的规则名称")
     async def rule_disable_cmd(self, event: GroupMessageEvent, rule_name: str):
         """禁用转发规则"""
         try:
@@ -325,112 +344,3 @@ class ForwardBotPlugin(NcatBotPlugin):
                 logger.info(
                     f"📊 转发统计: 成功率 {success_rate:.1f}% ({self.forward_stats['success']}/{total_attempts}), 运行时间 {runtime:.0f}秒"
                 )
-
-    @group_filter
-    async def onGroupCommandReceived(self, event: GroupMessageEvent):
-        message = event.raw_message
-        if message.startswith("/forward "):
-            command_str = message[len("/forward ") :].strip()
-
-        else:
-            return
-        # 权限检查
-        if event.user_id is not config.root and not self.manager.isAdmin(event.user_id):
-            await event.reply("❌ 你没有权限使用此命令")
-            return
-
-        # 解析命令参数
-        args = command_str.strip().split() if command_str.strip() else []
-
-        if not args:
-            await event.reply("请提供子命令。用法: /forward [stats|rules] ...")
-            return
-
-        subcommand = args[0]
-
-        match subcommand:
-            case "stats":
-                await self._handle_stats_command(event, args[1:])
-            case "rules":
-                await self._handle_rules_command(event, args[1:])
-            case _:
-                await event.reply("❌ 未知的子命令。支持的命令: stats, rules")
-
-    async def _handle_stats_command(self, event: GroupMessageEvent, args: list[str]):
-        """处理 stats 相关命令"""
-        if not args:
-            await self.stats_cmd(event, verbose=False)
-        elif args[0] == "verbose":
-            await self.stats_cmd(event, verbose=True)
-        else:
-            await event.reply("❌ 无效的参数。用法: /forward stats [verbose]")
-
-    async def _handle_rules_command(self, event: GroupMessageEvent, args: list[str]):
-        """处理 rules 相关命令"""
-        if not args:
-            # 默认显示规则列表
-            await self.rules_cmd(event, format="simple")
-            return
-
-        action = args[0]
-
-        match action:
-            case "list":
-                await self._handle_rules_list(event, args[1:])
-            case "add":
-                await event.reply("🚧 规则添加功能正在开发中...")
-            case "delete":
-                await self._handle_rules_delete(event, args[1:])
-            case "enable":
-                await self._handle_rules_enable(event, args[1:])
-            case "disable":
-                await self._handle_rules_disable(event, args[1:])
-            case _:
-                await event.reply(
-                    "❌ 无效的操作。用法: /forward rules [list|add|delete|enable|disable]"
-                )
-
-    async def _handle_rules_list(self, event: GroupMessageEvent, args: list[str]):
-        """处理规则列表命令"""
-        if not args:
-            await self.rules_cmd(event, format="simple")
-        elif args[0] in ["simple", "detailed"]:
-            await self.rules_cmd(event, format=args[0])
-        else:
-            await event.reply(
-                "❌ 无效的格式。用法: /forward rules list [simple|detailed]"
-            )
-
-    async def _handle_rules_delete(self, event: GroupMessageEvent, args: list[str]):
-        """处理规则删除命令"""
-        if not args:
-            await event.reply(
-                "❌ 请指定要删除的规则名称。用法: /forward rules delete <规则名> [force]"
-            )
-            return
-
-        rule_name = args[0]
-        force = len(args) > 1 and args[1] == "force"
-        await self.rule_delete_cmd(event, rule_name=rule_name, force=force)
-
-    async def _handle_rules_enable(self, event: GroupMessageEvent, args: list[str]):
-        """处理规则启用命令"""
-        if not args:
-            await event.reply(
-                "❌ 请指定要启用的规则名称。用法: /forward rules enable <规则名>"
-            )
-            return
-
-        rule_name = args[0]
-        await self.rule_enable_cmd(event, rule_name=rule_name)
-
-    async def _handle_rules_disable(self, event: GroupMessageEvent, args: list[str]):
-        """处理规则禁用命令"""
-        if not args:
-            await event.reply(
-                "❌ 请指定要禁用的规则名称。用法: /forward rules disable <规则名>"
-            )
-            return
-
-        rule_name = args[0]
-        await self.rule_disable_cmd(event, rule_name=rule_name)
