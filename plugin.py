@@ -1,24 +1,26 @@
+from ncatbot.core.event import GroupMessageEvent
 from ncatbot.plugin_system import (
     NcatBotPlugin,
-    group_filter,
-    root_filter,
     command_registry,
+    group_filter,
     option,
     param,
+    root_filter,
 )
 from ncatbot.utils import config, get_log
-from ncatbot.core.event import GroupMessageEvent
-from .rules import ForwardRuleManager
-from .forward_admin_filter import ForwardAdminFilter
-import time
 
-logger = get_log("ForwardBot")
+from .forward_admin_filter import ForwardAdminFilter
+from .rules import ForwardRuleManager
+
+import time
 
 
 class ForwardBotPlugin(NcatBotPlugin):
     name = "ForwardBot"
     version = "0.0.1"
     author = "KirisameVanilla"
+
+    logger = get_log("ForwardBot")
 
     manager = ForwardRuleManager()
 
@@ -39,7 +41,7 @@ class ForwardBotPlugin(NcatBotPlugin):
         # 为配置的每个 admin 赋予权限
         for admin in self.manager.admins:
             self.rbac_manager.assign_role_to_user(str(admin), "forward_admin")
-            logger.info(f"✅ 已赋予转发管理员权限: {admin}")
+            self.logger.info(f"✅ 已赋予转发管理员权限: {admin}")
 
     @root_filter
     @forward_admins_command_group.command("add")
@@ -51,7 +53,7 @@ class ForwardBotPlugin(NcatBotPlugin):
             return
         self.rbac_manager.assign_role_to_user(user_id, "forward_admin")
         await event.reply(f"✅ 成功添加转发管理员: {user_id}")
-        logger.info(
+        self.logger.info(
             f"✅ 已添加转发管理员: {user_id} (操作人: 群 {event.sender.user_id})"
         )
 
@@ -101,10 +103,10 @@ class ForwardBotPlugin(NcatBotPlugin):
     • 转发目标群：{", ".join(map(str, rule_stats["target_groups_list"][:5]))}{"..." if len(rule_stats["target_groups_list"]) > 5 else ""}"""
 
             await event.reply(stats_text)
-            logger.info(f"📊 用户查看统计信息：群 {event.group_id}")
+            self.logger.info(f"📊 用户查看统计信息：群 {event.group_id}")
 
         except Exception as e:
-            logger.error(f"❌ 处理统计命令时出错: {e}")
+            self.logger.error(f"❌ 处理统计命令时出错: {e}")
             await event.reply("❌ 获取统计信息失败")
 
     @ForwardAdminFilter()
@@ -150,10 +152,10 @@ class ForwardBotPlugin(NcatBotPlugin):
                 rules_text = rules_text[:950] + "...\n\n（规则过多，仅显示部分）"
 
             await event.reply(rules_text.strip())
-            logger.info(f"📋 用户查看规则列表：群 {event.group_id}")
+            self.logger.info(f"📋 用户查看规则列表：群 {event.group_id}")
 
         except Exception as e:
-            logger.error(f"❌ 处理规则列表命令时出错: {e}")
+            self.logger.error(f"❌ 处理规则列表命令时出错: {e}")
             await event.reply("❌ 获取规则列表失败")
 
     async def rule_add_cmd(self, event: GroupMessageEvent):
@@ -196,7 +198,7 @@ class ForwardBotPlugin(NcatBotPlugin):
             # 删除规则
             if self.manager.remove_rule(rule_name):
                 await event.reply(f"✅ 成功删除规则 '{rule_name}'")
-                logger.info(f"🗑️ 规则已删除：{rule_name} (群 {event.group_id})")
+                self.logger.info(f"🗑️ 规则已删除：{rule_name} (群 {event.group_id})")
 
                 # 重新加载配置以确保一致性
                 self.manager.load_config()
@@ -204,7 +206,7 @@ class ForwardBotPlugin(NcatBotPlugin):
                 await event.reply(f"❌ 删除规则 '{rule_name}' 失败")
 
         except Exception as e:
-            logger.error(f"❌ 处理删除规则命令时出错: {e}")
+            self.logger.error(f"❌ 处理删除规则命令时出错: {e}")
             await event.reply("❌ 删除规则失败")
 
     @ForwardAdminFilter()
@@ -230,12 +232,12 @@ class ForwardBotPlugin(NcatBotPlugin):
             # 启用规则
             if self.manager.enable_rule(rule_name):
                 await event.reply(f"✅ 成功启用规则 '{rule_name}'")
-                logger.info(f"🟢 规则已启用：{rule_name} (群 {event.group_id})")
+                self.logger.info(f"🟢 规则已启用：{rule_name} (群 {event.group_id})")
             else:
                 await event.reply(f"❌ 启用规则 '{rule_name}' 失败")
 
         except Exception as e:
-            logger.error(f"❌ 处理启用规则命令时出错: {e}")
+            self.logger.error(f"❌ 处理启用规则命令时出错: {e}")
             await event.reply("❌ 启用规则失败")
 
     @ForwardAdminFilter()
@@ -261,12 +263,12 @@ class ForwardBotPlugin(NcatBotPlugin):
             # 禁用规则
             if self.manager.disable_rule(rule_name):
                 await event.reply(f"✅ 成功禁用规则 '{rule_name}'")
-                logger.info(f"🔴 规则已禁用：{rule_name} (群 {event.group_id})")
+                self.logger.info(f"🔴 规则已禁用：{rule_name} (群 {event.group_id})")
             else:
                 await event.reply(f"❌ 禁用规则 '{rule_name}' 失败")
 
         except Exception as e:
-            logger.error(f"❌ 处理禁用规则命令时出错: {e}")
+            self.logger.error(f"❌ 处理禁用规则命令时出错: {e}")
             await event.reply("❌ 禁用规则失败")
 
     def safe_forward_message(
@@ -290,23 +292,27 @@ class ForwardBotPlugin(NcatBotPlugin):
 
                 self.forward_stats["success"] += 1
                 if attempt > 0:
-                    logger.info(
+                    self.logger.info(
                         f"✅ 消息转发成功 (重试第{attempt}次): 群{target_group}"
                     )
                 else:
-                    logger.info(f"✅ 消息转发成功: 群{target_group}")
+                    self.logger.info(f"✅ 消息转发成功: 群{target_group}")
                 return True
             except AttributeError as e:
-                logger.error(f"❌ AttributeError: 群{target_group}, 规则{rule_name}")
-                logger.error(f"   错误: {e}")
-                logger.error("   这通常表示目标群不存在、机器人不在群中、或消息已撤回")
+                self.logger.error(
+                    f"❌ AttributeError: 群{target_group}, 规则{rule_name}"
+                )
+                self.logger.error(f"   错误: {e}")
+                self.logger.error(
+                    "   这通常表示目标群不存在、机器人不在群中、或消息已撤回"
+                )
                 break  # AttributeError 通常不需要重试
 
             except Exception as e:
-                logger.error(
+                self.logger.error(
                     f"❌ 转发异常: 群{target_group}, 规则{rule_name} (尝试 {attempt + 1}/{max_retries + 1})"
                 )
-                logger.error(f"   错误: {e}")
+                self.logger.error(f"   错误: {e}")
 
             # 如果不是最后一次尝试，等待一下再重试
             if attempt < max_retries:
@@ -325,7 +331,7 @@ class ForwardBotPlugin(NcatBotPlugin):
 
         sender_uin = event.sender.user_id
         if sender_uin == config.bt_uin:
-            logger.info(f"🟢 过滤掉来自自身的消息: {sender_uin}")
+            self.logger.info(f"🟢 过滤掉来自自身的消息: {sender_uin}")
             return
         source_group = int(event.group_id)
 
@@ -334,10 +340,10 @@ class ForwardBotPlugin(NcatBotPlugin):
 
         if not matching_rules:
             # 只在调试模式下记录无匹配规则的消息
-            logger.debug(f"📝 群 {source_group} 消息无匹配规则: {message[:50]}")
+            self.logger.debug(f"📝 群 {source_group} 消息无匹配规则: {message[:50]}")
             return
 
-        logger.info(
+        self.logger.info(
             f"📝 群 {source_group} 消息匹配到 {len(matching_rules)} 条规则: {message[:50]}"
         )
 
@@ -345,7 +351,7 @@ class ForwardBotPlugin(NcatBotPlugin):
         for rule in matching_rules:
             for target_group in rule.target_groups:
                 if rule.can_forward_to(source_group, target_group):
-                    logger.info(
+                    self.logger.info(
                         f"🚀 开始转发: {source_group} -> {target_group} (规则: {rule.name})"
                     )
                     success = self.safe_forward_message(
@@ -353,7 +359,7 @@ class ForwardBotPlugin(NcatBotPlugin):
                     )
                     forward_tasks.append((target_group, success))
                 else:
-                    logger.debug(
+                    self.logger.debug(
                         f"🚫 规则 {rule.name} 不允许从 {source_group} 转发到 {target_group}"
                     )
 
@@ -362,7 +368,9 @@ class ForwardBotPlugin(NcatBotPlugin):
         total_forwards = len(forward_tasks)
 
         if total_forwards > 0:
-            logger.info(f"📊 转发完成: {successful_forwards}/{total_forwards} 成功")
+            self.logger.info(
+                f"📊 转发完成: {successful_forwards}/{total_forwards} 成功"
+            )
 
             # 每100次转发输出一次统计信息
             total_attempts = (
@@ -371,6 +379,6 @@ class ForwardBotPlugin(NcatBotPlugin):
             if total_attempts > 0 and total_attempts % 100 == 0:
                 runtime = time.time() - self.forward_stats["start_time"]
                 success_rate = self.forward_stats["success"] / total_attempts * 100
-                logger.info(
+                self.logger.info(
                     f"📊 转发统计: 成功率 {success_rate:.1f}% ({self.forward_stats['success']}/{total_attempts}), 运行时间 {runtime:.0f}秒"
                 )
