@@ -23,8 +23,6 @@ class ForwardBotPlugin(NcatBotPlugin):
     # 转发统计
     forward_stats = {"success": 0, "failed": 0, "start_time": time.time()}
 
-    @command_registry.command("stats", description="查看转发机器人统计信息")
-    @option(short_name="v", long_name="verbose", help="显示详细统计信息")
     async def stats_cmd(self, event: GroupMessageEvent, verbose: bool = False):
         """查看转发统计信息"""
         try:
@@ -75,10 +73,6 @@ class ForwardBotPlugin(NcatBotPlugin):
             logger.error(f"❌ 处理统计命令时出错: {e}")
             await event.reply("❌ 获取统计信息失败")
 
-    @command_registry.command("rules", description="查看转发规则列表")
-    @param(
-        name="format", default="simple", help="显示格式：simple(简单) 或 detailed(详细)"
-    )
     async def rules_cmd(self, event: GroupMessageEvent, format: str = "simple"):
         """查看转发规则列表"""
         try:
@@ -125,13 +119,10 @@ class ForwardBotPlugin(NcatBotPlugin):
             logger.error(f"❌ 处理规则列表命令时出错: {e}")
             await event.reply("❌ 获取规则列表失败")
 
-    @command_registry.command("rule-add", description="添加转发规则")
     async def rule_add_cmd(self, event: GroupMessageEvent):
         """添加转发规则"""
         await event.reply("🚧 规则添加功能正在开发中...")
 
-    @command_registry.command("rule-delete", description="删除指定的转发规则")
-    @option(short_name="f", long_name="force", help="强制删除规则，跳过确认")
     async def rule_delete_cmd(
         self, event: GroupMessageEvent, rule_name: str, force: bool = False
     ):
@@ -175,7 +166,6 @@ class ForwardBotPlugin(NcatBotPlugin):
             logger.error(f"❌ 处理删除规则命令时出错: {e}")
             await event.reply("❌ 删除规则失败")
 
-    @command_registry.command("rule-enable", description="启用指定的转发规则")
     async def rule_enable_cmd(self, event: GroupMessageEvent, rule_name: str):
         """启用转发规则"""
         try:
@@ -204,7 +194,6 @@ class ForwardBotPlugin(NcatBotPlugin):
             logger.error(f"❌ 处理启用规则命令时出错: {e}")
             await event.reply("❌ 启用规则失败")
 
-    @command_registry.command("rule-disable", description="禁用指定的转发规则")
     async def rule_disable_cmd(self, event: GroupMessageEvent, rule_name: str):
         """禁用转发规则"""
         try:
@@ -338,3 +327,81 @@ class ForwardBotPlugin(NcatBotPlugin):
                 logger.info(
                     f"📊 转发统计: 成功率 {success_rate:.1f}% ({self.forward_stats['success']}/{total_attempts}), 运行时间 {runtime:.0f}秒"
                 )
+
+    @command_registry.command("forward")
+    async def onGroupCommandReceived(self, event: GroupMessageEvent, *args: str):
+        if not args:
+            await event.reply("请提供子命令")
+            return
+        argc = len(args)
+        subcommand = args[0]
+        args = args[1:]
+        match subcommand:
+            case "stats":  # /forward stats *
+                if argc > 1:  # /forward stats *
+                    if args[1] == "verbose":  # /forward stats verbose
+                        await self.stats_cmd(event, verbose=True)
+                    else:
+                        await event.reply("无效的参数。用法: /forward stats [verbose]")
+                else:  # /forward stats
+                    await self.stats_cmd(event, verbose=False)
+                return
+            case "rules":  # /forward rules *
+                if argc == 1:  # /forward rules
+                    await self.rules_cmd(event, format="simple")
+                else:  # /forward rules *
+                    match args[1]:
+                        case "list":  # /forward rules list *
+                            if argc == 2:  # /forward rules list
+                                await self.rules_cmd(event, format="simple")
+                            else:
+                                if args[2] == "detailed" or args[2] == "simple":
+                                    await self.rules_cmd(event, format=args[2])
+                                else:
+                                    await event.reply(
+                                        "无效的参数。用法: /forward rules list [simple|detailed]"
+                                    )
+                            return
+                        case "add":
+                            await event.reply("🚧 规则添加功能正在开发中...")
+                            return
+                        case "delete":  # /forward rules delete *
+                            if argc > 2:  # /forward rules delete *
+                                if (
+                                    argc > 3 and args[3] == "force"
+                                ):  # /forward rules delete <规则名> force
+                                    await self.rule_delete_cmd(
+                                        event, rule_name=args[2], force=True
+                                    )
+                                else:
+                                    await self.rule_delete_cmd(event, rule_name=args[2])
+                            else:
+                                await event.reply(
+                                    "无效的参数。用法: /forward rules delete <规则名> [force]"
+                                )
+                            return
+                        case "enable":  # /forward rules enable *
+                            if argc > 2:
+                                await self.rule_enable_cmd(event, rule_name=args[2])
+                            else:
+                                await event.reply(
+                                    "无效的参数。用法: /forward rules enable <规则名>"
+                                )
+                            return
+                        case "disable":  # /forward rules disable *
+                            if argc > 2:
+                                await self.rule_disable_cmd(event, rule_name=args[2])
+                            else:
+                                await event.reply(
+                                    "无效的参数。用法: /forward rules disable <规则名>"
+                                )
+                            return
+                        case _:
+                            await event.reply(
+                                "无效的参数。用法: /forward rules [list|add|delete|enable|disable]"
+                            )
+                            return
+                return
+            case _:
+                await event.reply("未知的子命令")
+                return
