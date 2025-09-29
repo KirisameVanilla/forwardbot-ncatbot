@@ -6,5 +6,4 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "ncatbot>=4.1.0",
-    "asyncio-throttle>=1.0.2",
 ]
