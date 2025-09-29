@@ -5,7 +5,6 @@ from ncatbot.plugin_system import (
     option,
     param,
 )
-from ncatbot.core import BotClient
 from ncatbot.utils import config, get_log
 from ncatbot.core.event import GroupMessageEvent
 from rules import ForwardRuleManager
@@ -19,8 +18,6 @@ class ForwardBotPlugin(NcatBotPlugin):
     version = "0.0.1"
     author = "KirisameVanilla"
 
-    # 基础配置
-    bot: BotClient = BotClient()
     manager = ForwardRuleManager()
 
     # 转发统计
