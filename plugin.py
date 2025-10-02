@@ -289,6 +289,7 @@ class ForwardBotPlugin(NcatBotPlugin):
         for attempt in range(max_retries + 1):
             try:
                 self.api.forward_group_single_msg_sync(target_group, message_id)
+                self.api.set_msg_emoji_like_sync(message_id, 124, True)
 
                 self.forward_stats["success"] += 1
                 if attempt > 0:
