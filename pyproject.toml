@@ -3,7 +3,7 @@ name = "forwardbot-ncatbot"
 version = "0.1.0"
 description = "QQ群消息转发机器人，基于NCatBot框架"
 readme = "README.md"
-requires-python = "==3.12"
+requires-python = "==3.12.11"
 dependencies = [
     "ncatbot>=4.2.0",
 ]

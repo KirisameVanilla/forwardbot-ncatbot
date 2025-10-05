@@ -24,8 +24,6 @@ class ForwardRule:
     source_groups: List[int]  # 监听的源群号列表
     target_groups: List[int]  # 转发到的目标群号列表
     keywords: List[str]  # 前缀列表或关键词列表
-    forward_full_message: bool = True  # 是否转发完整消息
-    preserve_format: bool = True  # 是否保持原始格式
     forward_prefix: str = "[转发]"  # 转发前缀模板
 
     def __post_init__(self):
