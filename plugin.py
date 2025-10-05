@@ -22,7 +22,7 @@ class ForwardBotPlugin(NcatBotPlugin):
 
     logger = get_log("ForwardBot")
 
-    manager = ForwardRuleManager()
+    manager: ForwardRuleManager
 
     forward_command_group = command_registry.group(
         "forward", description="消息转发模块命令"
@@ -38,6 +38,14 @@ class ForwardBotPlugin(NcatBotPlugin):
 
     async def on_load(self) -> None:
         self.rbac_manager.add_role("forward_admin")
+        self.register_config("enabled", True)
+        self.register_config("send_interval_ms", 500)
+
+        self.register_config("rules", [])
+        self.register_config("admins", [])
+
+        self.manager = ForwardRuleManager(self.config)
+
         # 为配置的每个 admin 赋予权限
         for admin in self.manager.admins:
             self.rbac_manager.assign_role_to_user(str(admin), "forward_admin")

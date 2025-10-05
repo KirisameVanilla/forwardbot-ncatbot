@@ -2,8 +2,6 @@
 转发规则数据结构和管理模块
 """
 
-import yaml
-import os
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, asdict
 from enum import Enum
@@ -100,34 +98,27 @@ class ForwardRule:
 class ForwardRuleManager:
     """转发规则管理器"""
 
-    def __init__(self, config_file: str = "forward_config.yaml"):
-        self.config_file = config_file
+    def __init__(self, config: dict = {}):
+        self.config = config
         self.rules: List[ForwardRule] = []
         self.load_config()
 
     def load_config(self) -> None:
         """加载配置文件"""
         try:
-            if os.path.exists(self.config_file):
-                with open(self.config_file, "r", encoding="utf-8") as file:
-                    config = yaml.safe_load(file) or {}
+            # 加载转发规则
+            rules_data = self.config.get("rules", [])
+            self.admins: list[int] = self.config.get("admin", [])
+            self.rules = []
 
-                # 加载转发规则
-                rules_data = config.get("forward", {}).get("rules", [])
-                self.admins: list[int] = config.get("admin", [])
-                self.rules = []
+            for rule_data in rules_data:
+                try:
+                    rule = ForwardRule.from_dict(rule_data)
+                    self.rules.append(rule)
+                except Exception as e:
+                    print(f"加载规则失败: {rule_data.get('name', 'Unknown')} - {e}")
 
-                for rule_data in rules_data:
-                    try:
-                        rule = ForwardRule.from_dict(rule_data)
-                        self.rules.append(rule)
-                    except Exception as e:
-                        print(f"加载规则失败: {rule_data.get('name', 'Unknown')} - {e}")
-
-                print(f"成功加载 {len(self.rules)} 条转发规则")
-            else:
-                print(f"配置文件不存在: {self.config_file}，将使用空规则列表")
-                self.rules = []
+            print(f"成功加载 {len(self.rules)} 条转发规则")
 
         except Exception as e:
             print(f"加载配置文件失败: {e}")
@@ -137,22 +128,13 @@ class ForwardRuleManager:
         """保存配置到文件"""
         try:
             # 读取现有配置
-            config = {}
-            if os.path.exists(self.config_file):
-                with open(self.config_file, "r", encoding="utf-8") as file:
-                    config = yaml.safe_load(file) or {}
-
-            # 更新规则部分
-            if "forward" not in config:
-                config["forward"] = {}
-
-            config["forward"]["rules"] = [rule.to_dict() for rule in self.rules]
+            self.config["rules"] = [rule.to_dict() for rule in self.rules]
 
             # 保存到文件
-            with open(self.config_file, "w", encoding="utf-8") as file:
-                yaml.dump(
-                    config, file, default_flow_style=False, allow_unicode=True, indent=2
-                )
+            # with open(self.config_file, "w", encoding="utf-8") as file:
+            #     yaml.dump(
+            #         config, file, default_flow_style=False, allow_unicode=True, indent=2
+            #     )
 
             return True
 
