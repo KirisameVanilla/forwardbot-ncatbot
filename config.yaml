@@ -18,8 +18,6 @@ rules:
     keywords:                   # 前缀列表或关键词列表
       - "重要"
       - "紧急"
-    forward_full_message: true  # 是否转发完整消息(包含图片等)
-    preserve_format: true       # 是否保持原始格式
     forward_prefix: "[转发]"    # 转发前缀模板，支持变量 {source_group}
 
 # 管理员配置  

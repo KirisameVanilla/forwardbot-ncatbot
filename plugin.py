@@ -41,8 +41,8 @@ class ForwardBotPlugin(NcatBotPlugin):
         self.register_config("enabled", True)
         self.register_config("send_interval_ms", 500)
 
-        self.register_config("rules", [])
-        self.register_config("admins", [])
+        self.register_config("rules", [], "转发规则列表", value_type=list)
+        self.register_config("admins", [], "转发管理员列表", value_type=list)
 
         self.manager = ForwardRuleManager(self.config)
 
