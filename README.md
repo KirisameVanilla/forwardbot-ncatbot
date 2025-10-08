@@ -54,11 +54,10 @@ forwardbot-ncatbot/
 
 ### 配置
 
-1. 编辑 `forward_config.yaml` 文件：
+1. 编辑 `data/ForwardBotPlugin/ForwardBotPlugin.yaml` 文件：
 
     ```yaml
     # 转发机器人配置
-    forward:
     enabled: true                   # 启用转发功能
     send_interval: 500              # 转发间隔(毫秒)
     
@@ -79,7 +78,7 @@ forwardbot-ncatbot/
         forward_prefix: "[转发来自群{source_group}]"  # 转发前缀
 
     # 管理员配置
-    admin:
+    admins:
         - 123456789                     # 管理员QQ号
     ```
 
