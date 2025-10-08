@@ -65,6 +65,56 @@ class ForwardBotPlugin(NcatBotPlugin):
             f"✅ 已添加转发管理员: {user_id} (操作人: 群 {event.sender.user_id})"
         )
 
+    @forward_command_group.command("help")
+    async def help_cmd(self, event: GroupMessageEvent):
+        """显示转发模块帮助信息"""
+        help_text = """📖 转发模块命令帮助
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+📊 **通用命令**
+
+• `/forward stats` - 查看转发统计信息
+  选项：-v, --verbose  启用详细模式
+  示例：/forward stats -v
+
+• `/forward help` - 显示此帮助信息
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+📋 **规则管理命令** (需要管理员权限)
+
+• `/forward rules list` - 查看转发规则列表
+  选项：-d, --detailed  启用详细格式
+  示例：/forward rules list -d
+
+• `/forward rules delete <规则名称>` - 删除转发规则
+  选项：-f, --force  启用强制删除模式
+  示例：/forward rules delete 规则1 -f
+
+• `/forward rules enable <规则名称>` - 启用转发规则
+  示例：/forward rules enable 规则1
+
+• `/forward rules disable <规则名称>` - 禁用转发规则
+  示例：/forward rules disable 规则1
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+👥 **管理员管理命令** (需要root权限)
+
+• `/forward admins add <QQ号>` - 添加转发管理员
+  示例：/forward admins add 123456789
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+💡 **提示**
+• 使用 -h 或 --help 查看单个命令的详细帮助
+• 管理员命令需要相应权限才能使用
+• 规则名称区分大小写"""
+
+        await event.reply(help_text)
+        self.logger.info(f"📖 用户查看帮助信息：群 {event.group_id}")
+
     @forward_command_group.command("stats")
     @option(short_name="v", long_name="verbose", help="启用详细模式")
     async def stats_cmd(self, event: GroupMessageEvent, verbose: bool = False):
