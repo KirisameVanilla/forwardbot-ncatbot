@@ -128,12 +128,6 @@ class ForwardRuleManager:
             # 读取现有配置
             self.config["rules"] = [rule.to_dict() for rule in self.rules]
 
-            # 保存到文件
-            # with open(self.config_file, "w", encoding="utf-8") as file:
-            #     yaml.dump(
-            #         config, file, default_flow_style=False, allow_unicode=True, indent=2
-            #     )
-
             return True
 
         except Exception as e:

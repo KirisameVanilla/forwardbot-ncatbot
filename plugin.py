@@ -16,11 +16,11 @@ import time
 
 
 class ForwardBotPlugin(NcatBotPlugin):
-    name = "ForwardBot"
+    name = "ForwardBotPlugin"
     version = "0.0.1"
     author = "KirisameVanilla"
 
-    logger = get_log("ForwardBot")
+    logger = get_log("ForwardBotPlugin")
 
     manager: ForwardRuleManager
 
