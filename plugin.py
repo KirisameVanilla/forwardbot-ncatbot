@@ -1,3 +1,4 @@
+import asyncio
 from ncatbot.core.event import GroupMessageEvent
 from ncatbot.plugin_system import (
     NcatBotPlugin,
@@ -329,7 +330,7 @@ class ForwardBotPlugin(NcatBotPlugin):
             self.logger.error(f"❌ 处理禁用规则命令时出错: {e}")
             await event.reply("❌ 禁用规则失败")
 
-    def safe_forward_message(
+    async def safe_forward_message(
         self, target_group: int, message_id: str, rule_name: str, max_retries: int = 2
     ) -> bool:
         """
@@ -346,8 +347,8 @@ class ForwardBotPlugin(NcatBotPlugin):
         """
         for attempt in range(max_retries + 1):
             try:
-                self.api.forward_group_single_msg_sync(target_group, message_id)
-                self.api.set_msg_emoji_like_sync(message_id, 124, True)
+                await self.api.forward_group_single_msg(target_group, message_id)
+                await self.api.set_msg_emoji_like(message_id, 124, True)
 
                 self.forward_stats["success"] += 1
                 if attempt > 0:
@@ -375,7 +376,7 @@ class ForwardBotPlugin(NcatBotPlugin):
 
             # 如果不是最后一次尝试，等待一下再重试
             if attempt < max_retries:
-                time.sleep(0.5)
+                await asyncio.sleep(0.5)
 
         self.forward_stats["failed"] += 1
         return False
@@ -413,7 +414,7 @@ class ForwardBotPlugin(NcatBotPlugin):
                     self.logger.info(
                         f"🚀 开始转发: {source_group} -> {target_group} (规则: {rule.name})"
                     )
-                    success = self.safe_forward_message(
+                    success = await self.safe_forward_message(
                         target_group, message_id, rule.name
                     )
                     forward_tasks.append((target_group, success))
